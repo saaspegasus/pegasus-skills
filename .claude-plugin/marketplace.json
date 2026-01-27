@@ -1,0 +1,22 @@
+{
+  "name": "pegasus-skills",
+  "owner": {
+    "name": "SaaS Pegasus"
+  },
+  "metadata": {
+    "description": "AI agent skills for Django and SaaS Pegasus projects"
+  },
+  "plugins": [
+    {
+      "name": "pegasus-skills",
+      "source": ".",
+      "description": "Skills for Django development and SaaS Pegasus upgrades",
+      "version": "1.0.0",
+      "homepage": "https://github.com/saaspegasus/pegasus-skills",
+      "license": "MIT",
+      "keywords": ["django", "pegasus", "saas", "python"],
+      "strict": false,
+      "skills": "./skills"
+    }
+  ]
+}
