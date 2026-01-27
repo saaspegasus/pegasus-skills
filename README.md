@@ -16,20 +16,23 @@ Skills are markdown files that give AI agents specialized knowledge and workflow
 
 ### Option 1: CLI Install (Recommended)
 
-Use [add-skill](https://github.com/vercel-labs/add-skill) to install skills directly:
+Use the [Skills CLI](https://github.com/vercel-labs/skills) to install skills directly:
 
 ```bash
 # Install all skills
-npx add-skill saaspegasus/pegasus-skills
+npx skills add saaspegasus/pegasus-skills
 
 # Install specific skills
-npx add-skill saaspegasus/pegasus-skills --skill resolve-pegasus-conflicts
+npx skills add saaspegasus/pegasus-skills --skill resolve-pegasus-conflicts
 
 # List available skills
-npx add-skill saaspegasus/pegasus-skills --list
+npx skills add saaspegasus/pegasus-skills --list
+
+# Install globally (available across all projects)
+npx skills add saaspegasus/pegasus-skills --global
 ```
 
-This automatically installs to your `.claude/skills/` directory.
+This automatically installs to your `.claude/skills/` directory (or `~/.claude/skills/` for global installs).
 
 ### Option 2: Clone and Copy
 
