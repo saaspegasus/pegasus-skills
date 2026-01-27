@@ -1,22 +1,23 @@
 {
   "name": "pegasus-skills",
   "owner": {
-    "name": "SaaS Pegasus"
+    "name": "SaaS Pegasus",
+    "url": "https://www.saaspegasus.com"
   },
   "metadata": {
-    "description": "AI agent skills for Django and SaaS Pegasus projects"
+    "description": "AI agent skills for Django and SaaS Pegasus projects",
+    "version": "1.0.0",
+    "repository": "https://github.com/saaspegasus/pegasus-skills"
   },
   "plugins": [
     {
       "name": "pegasus-skills",
-      "source": ".",
-      "description": "Skills for Django development and SaaS Pegasus upgrades",
-      "version": "1.0.0",
-      "homepage": "https://github.com/saaspegasus/pegasus-skills",
-      "license": "MIT",
-      "keywords": ["django", "pegasus", "saas", "python"],
+      "description": "Skills for Django development and SaaS Pegasus upgrades: merge conflict resolution, and more",
+      "source": "./",
       "strict": false,
-      "skills": "./skills"
+      "skills": [
+        "./skills/resolve-pegasus-conflicts"
+      ]
     }
   ]
 }
