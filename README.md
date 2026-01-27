@@ -34,7 +34,25 @@ npx skills add saaspegasus/pegasus-skills --global
 
 This automatically installs to your `.claude/skills/` directory (or `~/.claude/skills/` for global installs).
 
-### Option 2: Clone and Copy
+### Option 2: Claude Code Plugin Marketplace
+
+Claude Code has a built-in [plugin marketplace](https://code.claude.com/docs/en/discover-plugins) for discovering and installing skills:
+
+```bash
+# Add the marketplace
+/plugin marketplace add saaspegasus/pegasus-skills
+
+# Install all skills from the marketplace
+/plugin install pegasus-skills
+
+# Or use the interactive UI
+/plugin
+# Then go to the Discover tab to browse and install
+```
+
+This integrates with Claude Code's plugin system and supports auto-updates.
+
+### Option 3: Clone and Copy
 
 Clone the entire repo and copy the skills folder:
 
@@ -43,7 +61,7 @@ git clone https://github.com/saaspegasus/pegasus-skills.git
 cp -r pegasus-skills/skills/* .claude/skills/
 ```
 
-### Option 3: Git Submodule
+### Option 4: Git Submodule
 
 Add as a submodule for easy updates:
 
@@ -53,7 +71,7 @@ git submodule add https://github.com/saaspegasus/pegasus-skills.git .claude/pega
 
 Then reference skills from `.claude/pegasus-skills/skills/`.
 
-### Option 4: Fork and Customize
+### Option 5: Fork and Customize
 
 1. Fork this repository
 2. Customize skills for your specific needs
