@@ -1,6 +1,6 @@
 ---
 name: resolve-pegasus-conflicts
-description: Resolve merge conflicts when upgrading SaaS Pegasus. Use when the user has merge conflicts after running git merge during a Pegasus upgrade, or when they need help with the merge process.
+description: Resolve merge conflicts when upgrading SaaS Pegasus. Use when the user has merge conflicts after running git merge during a Pegasus upgrade, or when they need help with the merge process. Also use when the user mentions 'merge pegasus,' 'upgrade pegasus,' or 'pegasus upgrade.'
 ---
 
 # Resolve Pegasus Conflicts
