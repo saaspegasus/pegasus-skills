@@ -62,7 +62,7 @@ If the user wants you to run the merge:
 4. **Checkout the upgrade branch**: If not already on it, run `git checkout <pegasus-branch-name>`
 5. **Pull latest changes**: Run `git pull` to ensure the upgrade branch is up to date with the remote
 6. **Identify main branch**: Determine the main development branch (usually `main` or `master`)
-7. **Run merge**: Execute `git merge <main-branch>` to merge the main development branch into the Pegasus upgrade branch
+7. **Run merge**: Execute `git merge origin/<main-branch>` to merge the main development branch into the Pegasus upgrade branch. **Important**: Always merge `origin/<main-branch>` (not the local branch) to ensure you're merging the latest remote version. The local main branch may be behind the remote.
 8. **Handle result**:
    - If no conflicts: Success! Proceed to post-merge steps
    - If conflicts: Follow the conflict resolution strategies above
