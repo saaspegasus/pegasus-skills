@@ -1,6 +1,6 @@
 ---
 name: resolve-pegasus-conflicts
-description: Resolve merge conflicts when upgrading SaaS Pegasus. Use when the user has merge conflicts after running git merge during a Pegasus upgrade, or when they need help with the merge process. Also use when the user mentions 'merge pegasus,' 'upgrade pegasus,' or 'pegasus upgrade.'
+description: Resolve merge conflicts when upgrading SaaS Pegasus. Use when the user has merge conflicts after running git merge during a Pegasus upgrade, or when they need help with the merge process. Also use when the user mentions 'merge pegasus".
 ---
 
 # Resolve Pegasus Conflicts
@@ -28,6 +28,7 @@ The user has already run `git merge <main branch>` and has conflicts to resolve.
 - **Reason**: Migration files should be regenerated, not merged
 - **Action**: For conflicted migration files, accept theirs (the user's version from main), then run `./manage.py makemigrations` after all conflicts are resolved
 - **Git command**: `git checkout --theirs <migration-file>` for each conflicted migration
+- **djstripe migration references**: If djstripe was upgraded, check if app migrations reference old djstripe migrations that no longer exist (see the "djstripe 2.10 upgrade" section below).
 
 #### Dependency Lock Files (uv.lock, requirements.txt, package-lock.json)
 - **Strategy**: Accept Pegasus changes to lock files, merge source files manually
@@ -62,7 +63,7 @@ If the user wants you to run the merge:
 4. **Checkout the upgrade branch**: If not already on it, run `git checkout <pegasus-branch-name>`
 5. **Pull latest changes**: Run `git pull` to ensure the upgrade branch is up to date with the remote
 6. **Identify main branch**: Determine the main development branch (usually `main` or `master`)
-7. **Run merge**: Execute `git merge origin/<main-branch>` to merge the main development branch into the Pegasus upgrade branch. **Important**: Always merge `origin/<main-branch>` (not the local branch) to ensure you're merging the latest remote version. The local main branch may be behind the remote.
+7. **Run merge**: Execute `git merge <main-branch>` to merge the main development branch into the Pegasus upgrade branch
 8. **Handle result**:
    - If no conflicts: Success! Proceed to post-merge steps
    - If conflicts: Follow the conflict resolution strategies above
@@ -119,4 +120,23 @@ You: "I can help with that. Let me:
 - **Too many conflicts**: If there are dozens of conflicts across many files, suggest reviewing them in priority order (migrations first, then lock files, then configuration)
 - **Custom modifications**: Be conservative with user customizations - when in doubt, keep their changes and note what was different in Pegasus
 - **Unfamiliar file types**: If you encounter conflicts in files you're not sure how to handle, explain both sides of the conflict and ask the user which approach makes sense
+
+### djstripe 2.10 upgrade (Pegasus 2026.2.2+)
+
+Pegasus 2026.2.2 upgraded djstripe from 2.9 to 2.10. This is a significant upgrade that requires extra steps beyond normal conflict resolution.
+
+#### Migration squash
+djstripe 2.10 squashed all previous migrations into `0001_initial` and `0002_2_10`. After resolving migration conflicts, check if any app migrations reference old djstripe migrations (e.g. `('djstripe', '0012_2_8')`) that no longer exist. If so, update those dependencies to `('djstripe', '0001_initial')`. Do NOT delete migrations — update their dependency references instead.
+
+#### Fields moved to stripe_data
+Many model fields were removed as DB columns and now read from the `stripe_data` JSONField via `@property` accessors. Key changes on `Product`: `default_price`, `type` are now properties. This means:
+- `select_related("default_price")` will fail — remove it, just use `.get()` directly
+- `filter()`, `order_by()`, `values()` on removed fields will fail — use `stripe_data__<field>` instead
+- Property access like `product.default_price.id` still works (it does a DB lookup from `stripe_data`)
+
+#### Re-sync stripe data after migrating
+After running `./manage.py migrate`, run `./manage.py djstripe_sync_models` to repopulate `stripe_data` for existing records. Without this, properties like `product.default_price` will return `None` because the old FK data isn't in `stripe_data` yet.
+
+#### Obsolete workarounds
+The `RunSQL` migration that altered `djstripe_paymentintent.capture_method` column length (workaround for [dj-stripe#2038](https://github.com/dj-stripe/dj-stripe/issues/2038)) is no longer needed. Clear its `operations` list (keep the migration file as a no-op for the dependency chain).
 
