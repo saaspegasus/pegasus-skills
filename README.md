@@ -14,7 +14,25 @@ Skills are markdown files that give AI agents specialized knowledge and workflow
 
 ## Installation
 
-### Option 1: CLI Install (Recommended)
+### Option 1: Claude Code Plugin Marketplace (Recommended)
+
+Claude Code has a built-in [plugin marketplace](https://code.claude.com/docs/en/discover-plugins) for discovering and installing skills:
+
+```bash
+# Add the marketplace
+/plugin marketplace add saaspegasus/pegasus-skills
+
+# Install all skills from the marketplace
+/plugin install pegasus-skills
+
+# Or use the interactive UI
+/plugin
+# Then go to the Discover tab to browse and install
+```
+
+This integrates with Claude Code's plugin system and supports auto-updates.
+
+### Option 2: CLI Install
 
 Use the [Skills CLI](https://github.com/vercel-labs/skills) to install skills directly:
 
@@ -33,24 +51,6 @@ npx skills add saaspegasus/pegasus-skills --global
 ```
 
 This automatically installs to your `.claude/skills/` directory (or `~/.claude/skills/` for global installs).
-
-### Option 2: Claude Code Plugin Marketplace
-
-Claude Code has a built-in [plugin marketplace](https://code.claude.com/docs/en/discover-plugins) for discovering and installing skills:
-
-```bash
-# Add the marketplace
-/plugin marketplace add saaspegasus/pegasus-skills
-
-# Install all skills from the marketplace
-/plugin install pegasus-skills
-
-# Or use the interactive UI
-/plugin
-# Then go to the Discover tab to browse and install
-```
-
-This integrates with Claude Code's plugin system and supports auto-updates.
 
 ### Option 3: Clone and Copy
 
