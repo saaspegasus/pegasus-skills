@@ -64,9 +64,10 @@ If the user wants you to run the merge:
 5. **Pull latest changes**: Run `git pull` to ensure the upgrade branch is up to date with the remote
 6. **Identify main branch**: Determine the main development branch (usually `main` or `master`)
 7. **Run merge**: Execute `git merge <main-branch>` to merge the main development branch into the Pegasus upgrade branch
-8. **Handle result**:
-   - If no conflicts: Success! Proceed to post-merge steps
-   - If conflicts: Follow the conflict resolution strategies above
+8. **Handle conflicts**: Follow the conflict resolution strategies above
+9. **Dependency sync**: Once conflicts have been resolved, you should re-sync dependencies.
+   - Python: `uv sync`
+   - JavaScript: `npm install`
 
 ### Post-merge steps
 
@@ -74,12 +75,10 @@ After all conflicts are resolved and the merge is complete, **ask the user if th
 
 If the user wants to proceed, run these steps:
 
-1. **Database migrations**: Run `./manage.py makemigrations` to create new migrations if needed
-2. **Dependency sync**:
-   - Python: `uv sync` (or `pip install -r requirements.txt`)
-   - JavaScript: `npm install`
-3. **Build assets**: `npm run build` (or `npm run dev` for development)
-4. **Optional - Run migrations**: `./manage.py migrate` to apply database changes
+1. **Build assets**: `npm run build` (or `npm run dev` for development)
+2. **Optional - Database migrations**: Run `./manage.py makemigrations` to create new migrations if needed
+3. **Optional - Run migrations**: `./manage.py migrate` to apply database changes
+4. **Optional - Run Tests**: `./manage.py test` to run the Python test suite
 5. **Optional - Docker users**: They can run `make upgrade` instead of manual steps above
 6. **Push to GitHub**: Run `git push` to push the merged changes to GitHub. Once pushed, the upgrade branch should be ready to merge into the main branch via pull request
 
@@ -90,6 +89,7 @@ If the user prefers to do these manually, inform them what steps they should tak
 - **Enable rerere**: Suggest running `git config rerere.enabled true` to remember conflict resolutions for future upgrades
 - **Never squash**: When merging Pegasus PRs in GitHub, always use "Create a merge commit" (not squash or rebase)
 - **Review changes**: Always review what changed in the upgrade before committing
+- **Always compare clean versions**: When resolving non-trivial conflicts, use `git show HEAD:<file>` and `git show main:<file>` to see the clean versions from each branch, rather than trying to parse the conflict markers in place
 
 ### Examples
 
@@ -135,7 +135,7 @@ Many model fields were removed as DB columns and now read from the `stripe_data`
 - Property access like `product.default_price.id` still works (it does a DB lookup from `stripe_data`)
 
 #### Re-sync stripe data after migrating
-After running `./manage.py migrate`, run `./manage.py djstripe_sync_models` to repopulate `stripe_data` for existing records. Without this, properties like `product.default_price` will return `None` because the old FK data isn't in `stripe_data` yet.
+After running `./manage.py migrate`, run `./manage.py djstripe_sync_models Product Price` to repopulate `stripe_data` for existing records. Without this, properties like `product.default_price` will return `None` because the old FK data isn't in `stripe_data` yet.
 
 #### Obsolete workarounds
 The `RunSQL` migration that altered `djstripe_paymentintent.capture_method` column length (workaround for [dj-stripe#2038](https://github.com/dj-stripe/dj-stripe/issues/2038)) is no longer needed. Clear its `operations` list (keep the migration file as a no-op for the dependency chain).
