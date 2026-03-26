@@ -11,6 +11,7 @@ Skills are markdown files that give AI agents specialized knowledge and workflow
 | Skill | Description | Triggers |
 |-------|-------------|----------|
 | [resolve-pegasus-conflicts](skills/resolve-pegasus-conflicts/) | Resolve merge conflicts when upgrading SaaS Pegasus | "merge conflicts," "pegasus upgrade," "upgrade conflicts" |
+| [upgrade-pegasus](skills/upgrade-pegasus/) | Upgrade to the latest version of SaaS Pegasus | "upgrade pegasus," "pegasus upgrade" |
 
 ## Installation
 
@@ -87,12 +88,16 @@ Once installed, just ask Claude Code to help with Django/Pegasus tasks:
 
 "I just merged main into the pegasus branch and have conflicts"
 → Uses resolve-pegasus-conflicts skill
+
+"Upgrade Pegasus to the latest version"
+→ Uses upgrade-pegasus skill
 ```
 
 You can also invoke skills directly:
 
 ```
 /resolve-pegasus-conflicts
+/upgrade-pegasus
 ```
 
 ### Skill File Structure
