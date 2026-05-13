@@ -42,9 +42,19 @@ Without these flags, the CLI will show an interactive menu that doesn't work wel
 
 If the user doesn't specify stable vs dev, default to `--upgrade` (stable).
 
+#### Custom PR title
+
+If the user asks for a specific pull request title (e.g. "use PR title X" or "call the PR Y"), pass it via `--pr-title`:
+
+```
+pegasus projects push <project_id> --upgrade --pr-title "Your custom title"
+```
+
+If the user doesn't mention a title, omit the flag — the server generates a sensible default based on the version.
+
 ### After the push completes
 
 1. Run `git fetch origin` to see the new branch
 2. The branch name will be in the format `pegasus-<version>-<timestamp>` (e.g. `pegasus-2026.2.1.3-1771252378.779356`)
 3. `git checkout <branch-name>` to switch to it (it will already be up to date from the push)
-4. Merge the user's default branch (usually `main`) into the upgrade branch using your "resolve pegasus conflicts" skill
+4. Merge the user's default branch (usually `main`) into the upgrade branch using your "resolve pegasus conflicts" skill. That skill owns the post-merge verification and push flow.

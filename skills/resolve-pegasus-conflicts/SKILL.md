@@ -71,18 +71,30 @@ If the user wants you to run the merge:
 
 ### Post-merge steps
 
-After all conflicts are resolved and the merge is complete, **ask the user if they want to proceed with the post-merge steps** or if they prefer to do them manually later.
+After all conflicts are resolved and the merge is complete, run the verification steps below. By default, work straight through them without pausing for confirmation between steps — the user kicked off an upgrade and expects forward motion. Stop only if a step fails, or if the user has said they want to review before pushing.
 
-If the user wants to proceed, run these steps:
+1. **Frontend install + build**: `npm install && npm run build`
+2. **Python dependency sync**: `uv sync`
+3. **Migrations**: `./manage.py makemigrations` then `./manage.py migrate`
+4. **Tests**: `./manage.py test`
 
-1. **Build assets**: `npm run build` (or `npm run dev` for development)
-2. **Optional - Database migrations**: Run `./manage.py makemigrations` to create new migrations if needed
-3. **Optional - Run migrations**: `./manage.py migrate` to apply database changes
-4. **Optional - Run Tests**: `./manage.py test` to run the Python test suite
-5. **Optional - Docker users**: They can run `make upgrade` instead of manual steps above
-6. **Push to GitHub**: Run `git push` to push the merged changes to GitHub. Once pushed, the upgrade branch should be ready to merge into the main branch via pull request
+Commit any pending changes produced by the steps above (e.g. new migrations, formatting fixes) with a clear message. Docker users can substitute `make upgrade` for the build/migrate steps.
 
-If the user prefers to do these manually, inform them what steps they should take when ready.
+### Pushing
+
+If everything above passed, the default is to push so the user can open a PR:
+
+```
+git push -u origin <branch-name>
+```
+
+Then report the branch name and a summary of what was upgraded. The push output includes a "Create a pull request" URL — surface that link to the user and tell them that's where they can review the diff and open the PR.
+
+Hold off on pushing (and ask first) if any of these are true:
+- A verification step failed or had warnings worth a human look
+- The user said earlier they wanted to review before pushing, or asked to "stop before push"
+- The merge required non-trivial judgment calls you're not confident about
+- There are local commits unrelated to the upgrade that the user may not want pushed
 
 ### Important reminders
 
