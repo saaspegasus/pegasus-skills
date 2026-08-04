@@ -19,7 +19,7 @@ pegasus projects list
 
 You should be able to compare the project names to what's defined `pegasus-config.yaml` to find the right id.
 
-You may need to prompt the user to authenticate first. If necessary, do that via the CLI (`pegasus auth`).
+Before running any `pegasus` commands, confirm auth with `pegasus auth status` (non-interactive). If it reports unauthenticated, ask the user to run `pegasus auth login` in a **separate terminal** — it's interactive and will hang if invoked from this session. See the `pegasus-projects` skill's Setup section for the full flow.
 
 ### Before pushing
 

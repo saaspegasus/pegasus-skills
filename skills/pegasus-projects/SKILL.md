@@ -5,8 +5,7 @@ description: |
   via the `pegasus` CLI — e.g. "create a new Pegasus project for X",
   "add subscriptions to my Pegasus project", "show me my project settings",
   "switch the front-end framework to React", "what features can I use on
-  my license tier". This skill covers the `pegasus projects create / update /
-  show / fields` commands and the underlying API shape.
+  my license tier".
 ---
 
 # Managing SaaS Pegasus projects
@@ -17,14 +16,51 @@ framework, auth providers, billing, AI, etc.) that the Pegasus build pipeline
 later renders into a real Django codebase. Your job is to translate the user's
 intent into the right CLI calls.
 
+## Running the CLI
+
+The Pegasus CLI is published on PyPI as **`pegasus-cli`** (binary name
+`pegasus`) and also ships installed in every Pegasus project's venv,
+pinned to that project's release version.
+
+**Pick the invocation form at session start:**
+
+1. Run `command -v pegasus`.
+2. If it returns a path → **use bare `pegasus ...`**. This is the
+   preferred form whenever it's available — the local install is
+   version-matched to the project and may even be ahead of what's on
+   PyPI (e.g. unreleased CLI changes that ship with the local repo).
+3. If it returns nothing → **use `uvx --from pegasus-cli pegasus ...`**
+   for every command. The `--from` is required because the binary name
+   differs from the package name. Works from any cwd, no venv needed.
+   First call caches the env (a few seconds); subsequent calls are
+   fast.
+
+**Don't mix forms within a session.** Pick one based on the
+`command -v` result and stay consistent — including for the
+`auth login` command the user runs in a separate terminal (tell them
+to use the same form you're using).
+
+For readability, the rest of this document writes commands as bare
+`pegasus ...`. Mentally prepend `uvx --from pegasus-cli` if you're in
+the uvx case.
+
 ## Setup (one time)
 
 Authentication uses an API key from saaspegasus.com.
 
-- Check if `pegasus auth` is already configured: a key lives at
-  `~/.pegasus/credentials`, or in `$PEGASUS_API_KEY`.
-- If not, ask the user to run `pegasus auth` themselves. Don't try to guess
-  or generate a key — they must paste their own.
+- **Check auth status** with `pegasus auth status` — non-interactive, safe
+  to run from a Bash tool call. It exits 0 when a key is configured (via
+  `~/.pegasus/credentials` or `$PEGASUS_API_KEY`) and non-zero otherwise.
+- If unauthenticated, **do not** try to log in from this session.
+  `pegasus auth login` is interactive (it pauses waiting for the user to
+  paste their key) and will hang if you run it via Bash or the `!` prefix.
+  Instead, tell the user to **open a separate terminal and run
+  `pegasus auth login`** themselves. They'll be prompted to paste a key
+  from https://www.saaspegasus.com/. Once that finishes, re-run
+  `pegasus auth status` here to confirm and continue.
+- Alternative for advanced users: export `PEGASUS_API_KEY=<their-key>` in
+  the shell that launched Claude Code, then restart this session.
+- Never try to guess or generate a key yourself — only the user has it.
 
 ## Commands
 
@@ -67,27 +103,50 @@ For any non-trivial create or update, work in this order:
    {
      "user_tier": "free" | "basic" | "pro" | "unlimited",
      "fields": {
-       "project_name":      { "type": "string", "max_length": 100 },
-       "use_celery":        { "type": "boolean", "min_tier": "free" },
-       "use_subscriptions": { "type": "boolean", "min_tier": "pro" },
-       "ai_chat_mode":      { "type": "choice", "choices": ["llm", "none"], "min_tier": "pro" },
+       "project_name":        { "type": "string", "max_length": 100 },
+       "use_celery":          { "type": "boolean", "min_tier": "free" },
+       "use_subscriptions":   { "type": "boolean", "min_tier": "pro" },
+       "front_end_framework": {
+         "type": "choice",
+         "min_tier": "free",
+         "choices": [
+           { "value": "htmx" },
+           { "value": "react", "min_tier": "basic" }
+         ]
+       },
        ...
      }
    }
    ```
 
-   - `min_tier` only appears on fields gated by a license tier. Compute
-     "can I use this?" client-side: `field.min_tier <= user_tier` per the
-     ordering `free < basic < pro < unlimited`. No feature requires
-     `unlimited` today — treat unlimited as ≥ pro for the math.
+   - **Read `user_tier` first and treat it as a constraint, not a starting
+     point.** Build a configuration that fits the user's current tier.
+     Don't propose features above their tier unless they explicitly asked
+     for one. The default assumption is "stay where you are"; an upgrade
+     is something the user opts into, not something you steer them toward.
+   - `min_tier` can appear at **two levels** — both must clear the user's
+     tier for a value to be usable. Tier ordering is
+     `free < basic < pro < unlimited`.
+     - **Field-level** (`field.min_tier`): floor to configure the field at
+       all. `field.min_tier <= user_tier`.
+     - **Per-choice** (`field.choices[i].min_tier`, choice fields only):
+       floor to set that specific value. `choice.min_tier <= user_tier`.
+       Choices without `min_tier` are always available (assuming the field
+       itself is).
    - Fields without `min_tier` (project_name, project_slug, etc.) are
      tier-agnostic.
-   - Choice fields list **only the currently valid choices** for this
-     context — don't hardcode the choice list, read it from the schema.
+   - **Choices are objects, not bare strings** — the value to send is at
+     `choice.value`. The schema lists every choice regardless of tier and
+     tags gated ones with `min_tier`; filter client-side before proposing
+     a value to the user. Don't hardcode choice lists, always read them
+     from the schema.
 
-2. **If the user asked for a tier-gated feature they can't use**, surface
-   that *before* attempting the call. Say something like: "Subscriptions
-   requires a Pro license; you're on free tier. Want to skip it, or upgrade?"
+2. **If the user explicitly asked for a tier-gated feature they can't use**,
+   surface that before attempting the call, and lead with the in-tier path.
+   Something like: "Subscriptions requires a Pro license; you're on free.
+   I can skip it and build the rest, or if you want to upgrade I can wait."
+   Don't bring up upgrades unprompted when the user hasn't asked for
+   anything gated.
 
 3. **Construct the payload.** Two ways to provide settings, combinable:
    - `--set key=value` (repeatable) for individual fields. Booleans accept
@@ -141,11 +200,12 @@ with a few specifics:
 - **Renamed wire keys** (different from the model field name):
   - `project_name` ↔ model `name`
   - `use_auto_reload` ↔ model `use_browser_reload`
-- **`pegasus_version`** is the *pinned* version (e.g. `"2026.5"` or
-  `"2026.5.0.2"`) or `null` to track latest. The value must match an
-  actual released version — the server validates against its release
-  list and rejects guessed strings like `"2026.5.0"` with
-  `Unknown Pegasus version`. If the user just wants the latest, use
+- **`pegasus_version`** is the *pinned* version (e.g. `"2026.5"` for a
+  major release or `"2026.5.1"` for a patch) or `null` to track latest.
+  Major versions do *not* have a trailing `.0` — it's `"2026.5"`, not
+  `"2026.5.0"`. The value must match an actual released version — the
+  server validates against its release list and rejects guessed strings
+  like `"2026.5.0"` with `Unknown Pegasus version`. If the user just wants the latest, use
   `null`; don't try to construct a version string. Output also includes
   `_pegasus_version` (read-only, the resolved version that would be
   used at build time).
@@ -186,6 +246,13 @@ prefer `use_ai_rules_claude=true` (its UI label is "Claude Code
 (Recommended)"). Only set `use_ai_rules_agents`, `use_ai_rules_cursor`, or
 `use_ai_rules_junie` when the user names that specific tool.
 
+For the **front-end framework**, strongly prefer HTMX. Don't surface React
+as an option unprompted — when proposing a project config, just go with
+HTMX and move on. Only switch to React if the user explicitly asks for
+React, a SPA, or describes a JS-heavy frontend (rich client-side state,
+live collaboration, etc.). HTMX is the right default for typical
+server-rendered SaaS apps and keeps the project simpler.
+
 ## Field interdependencies
 
 The server enforces several couplings. Knowing them keeps you from proposing
@@ -209,15 +276,20 @@ at build time. If a project has features its license can't support, the
 API rejects with a 400 keyed per offending feature.
 
 You should pre-check via the schema's `min_tier` rather than discovering
-through 400s. If the user wants something their tier can't do:
+through 400s. If the user wants something their tier can't do, **default
+to the in-tier path**:
 
-- If a license upgrade unblocks them, surface that as an option.
-- If they want to drop the gated features instead, propose the specific
-  subset to remove.
+- Propose the specific subset of gated features to drop, and proceed with
+  what their tier supports.
+- Only if the user pushes back ("but I really need subscriptions") should
+  you surface the upgrade option, and even then as information rather than
+  a sales pitch.
+- If the user came in *asking* for an upgrade, that's different — help
+  them there.
 
 If the user has no license at all and the free tier flag is active for them,
 their tier is `free`. Otherwise no license means they can't build at all
-(the API will create projects but `pegasus push` will refuse).
+(the API will create projects but `pegasus projects push` will refuse).
 
 ## Common patterns
 
@@ -246,6 +318,90 @@ their tier is `free`. Otherwise no license means they can't build at all
   the response will reflect that project's release and current values.
 - Parse JSON; don't rely on the table.
 
+## Pushing the project
+
+`pegasus projects push <id>` is what actually generates the code — it
+renders the project into a linked GitHub repo. It's a separate flow from
+create/update.
+
+### Before the first push: connect a GitHub repo
+
+A push will fail with `No GitHub repository configured for this project`
+unless a GitHub repo has been linked to the project. **A newly-created
+project never has one** — repo linking happens in the Pegasus web UI,
+not via the CLI.
+
+When you're about to push a project for the first time, **proactively
+tell the user up front** that they need to visit
+`https://www.saaspegasus.com/projects/download/<id>/` to connect a
+GitHub repo before the push will work. Don't wait for the 400 — flag it
+when you confirm "ready to push?" so they don't bounce off an avoidable
+error. The same page is where they'd attach a license if their tier
+requires one.
+
+### The upgrade prompt (interactive trap)
+
+**The push command is interactive when a newer Pegasus version is
+available**, which is essentially always for a freshly-created project.
+It prompts:
+
+```
+Upgrade options:
+  1. Upgrade to latest stable version
+  2. Upgrade to latest dev version
+  3. Don't upgrade
+Select an option (1, 2, 3) [3]:
+```
+
+A bare `pegasus projects push <id>` from a Bash tool call will hang on
+this prompt and abort. **Always pass one of these flags:**
+
+- `--no-upgrade` — push at the project's currently-pinned Pegasus
+  version. This is the right default for a **first push of a
+  freshly-created project** (matches option 3, the prompt's default).
+- `--upgrade` — upgrade to the latest stable Pegasus version, then push.
+- `--dev` — upgrade to the latest dev version, then push.
+
+If the user just created the project and you're pushing for the first
+time, default to `--no-upgrade` and don't bring up the upgrade options
+unprompted — they picked their version at create time. For pushing an
+**existing** project to a newer release (the "upgrade Pegasus" flow), see
+the `upgrade-pegasus` skill.
+
+### Setting the PR title (`--pr-title`)
+
+`pegasus projects push` accepts `--pr-title "<text>"` to set the title
+of the resulting GitHub PR. **When the push follows a config change,
+always pass it** — a good title makes the PR reviewable at a glance,
+and the agent has all the context to write one the user won't have to.
+
+The natural title is a short summary of what just changed in
+`pegasus projects update`. Examples:
+
+- After `--set front_end_framework=react` →
+  `--pr-title "Switch frontend to React"`
+- After turning on multiple features →
+  `--pr-title "Add subscriptions and teams"`
+- After `--set pegasus_version=2026.5.1` →
+  `--pr-title "Upgrade Pegasus to 2026.5.1"`
+
+When the change set is large, lead with the headline change rather than
+exhaustively listing every flag — the PR diff covers the rest.
+
+For the **first push of a new project**, `--pr-title` is optional;
+something like `"Initial Pegasus project setup"` is fine if you want
+to set one. For the upgrade-an-existing-project flow, see
+`upgrade-pegasus` for title conventions specific to upgrades.
+
+### After a successful push
+
+The push output includes the resulting GitHub repository URL. Once it
+completes, **offer to clone the repo locally** (e.g.
+`git clone <url> <path>`) so the user can start working on it. Don't
+auto-clone — ask first and let them pick the target directory. If
+they're not local-dev oriented (e.g. they're pushing from CI or just
+wanted the rendered code in GitHub), they'll say no, and that's fine.
+
 ## Gotchas
 
 - **Always parse JSON, never the table.** Repeating because it bites:
@@ -257,9 +413,6 @@ their tier is `free`. Otherwise no license means they can't build at all
   slug `my_app`. You can't have two on one account.
 - **PATCH is partial.** Unspecified fields stay as-is. To "reset" a field,
   you must explicitly set it (e.g., `--set ai_chat_mode=none`).
-- **Pegasus version is finicky.** Pinned version (`"2026.5.0"`) or null. If
-  the user wants the latest, use null — don't try to discover the latest
-  version string yourself.
 - **License downgrade can break a project.** If the user PATCHes to a lower
   license tier while pro features are on, the API will 400. Either remove
   the pro features in the same PATCH or do it as two steps.
