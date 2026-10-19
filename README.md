@@ -21,10 +21,11 @@ Skills are markdown files that give AI agents specialized knowledge and workflow
 Claude Code has a built-in [plugin marketplace](https://code.claude.com/docs/en/discover-plugins) for discovering and installing skills:
 
 ```bash
-# Add the marketplace
-/plugin marketplace add saaspegasus/pegasus-skills
+# Install in one step (Claude Code 2.1.275 or later)
+/plugin install pegasus-skills --marketplace saaspegasus/pegasus-skills
 
-# Install all skills from the marketplace
+# Or, on older versions, add the marketplace first and then install
+/plugin marketplace add saaspegasus/pegasus-skills
 /plugin install pegasus-skills
 
 # Or use the interactive UI
