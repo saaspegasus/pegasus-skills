@@ -12,10 +12,12 @@
   "plugins": [
     {
       "name": "pegasus-skills",
-      "description": "Skills for Django development and SaaS Pegasus upgrades: merge conflict resolution, and more",
+      "description": "Skills for SaaS Pegasus projects: create and configure projects, upgrade Pegasus, and resolve upgrade merge conflicts",
       "source": "./",
       "strict": false,
       "skills": [
+        "./skills/pegasus-projects",
+        "./skills/upgrade-pegasus",
         "./skills/resolve-pegasus-conflicts"
       ]
     }

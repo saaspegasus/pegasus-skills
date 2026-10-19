@@ -10,6 +10,7 @@ Skills are markdown files that give AI agents specialized knowledge and workflow
 
 | Skill | Description | Triggers |
 |-------|-------------|----------|
+| [pegasus-projects](skills/pegasus-projects/) | Create, view, and configure Pegasus projects via the `pegasus` CLI | "create a new Pegasus project," "add subscriptions to my project," "what features are on my tier" |
 | [resolve-pegasus-conflicts](skills/resolve-pegasus-conflicts/) | Resolve merge conflicts when upgrading SaaS Pegasus | "merge conflicts," "pegasus upgrade," "upgrade conflicts" |
 | [upgrade-pegasus](skills/upgrade-pegasus/) | Upgrade to the latest version of SaaS Pegasus | "upgrade pegasus," "pegasus upgrade" |
 
@@ -83,6 +84,9 @@ Then reference skills from `.claude/pegasus-skills/skills/`.
 Once installed, just ask Claude Code to help with Django/Pegasus tasks:
 
 ```
+"Create a new Pegasus project for a recipe-sharing app"
+→ Uses pegasus-projects skill
+
 "Help me resolve these merge conflicts from the Pegasus upgrade"
 → Uses resolve-pegasus-conflicts skill
 
@@ -96,6 +100,7 @@ Once installed, just ask Claude Code to help with Django/Pegasus tasks:
 You can also invoke skills directly:
 
 ```
+/pegasus-projects
 /resolve-pegasus-conflicts
 /upgrade-pegasus
 ```
