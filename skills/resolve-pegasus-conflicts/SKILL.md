@@ -109,7 +109,6 @@ Hold off on pushing (and ask first) if any of these are true:
 
 - **Enable rerere**: Suggest running `git config rerere.enabled true` to remember conflict resolutions for future upgrades
 - **Never squash**: When merging Pegasus PRs in GitHub, always use "Create a merge commit" (not squash or rebase)
-- **Review changes**: Always review what changed in the upgrade before committing
 
 ### Edge cases
 
